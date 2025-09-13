@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Foto por Voz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background-color: lightblue; 
+      color: #333;
+    }
+
+    .titulo {
+      background-color: #4CAF50; 
+      color: white;
+      padding: 15px;
+      margin-bottom: 30px;
+      font-size: 20px;
+      border-radius: 5px;
+    }
+
+    video, canvas {
+      width: 80%;
+      max-width: 500px;
+      margin: 15px auto;
+      border: 2px solid #333;
+      border-radius: 5px;
+      display: block;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #28a745; 
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838; 
+    }
+  </style>
+</head>
+<body>
+  <div class="titulo">
+    <h1> Di foto para que se capture la imagen</h1>
+  </div>
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <br>
+  <button id="descargar">Descargar la Foto</button>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const btnDescargar = document.getElementById('descargar');
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        alert("No se pudo conectar a la cámara: " + err);
+      });
+
+    function tomarFoto() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    if ('webkitSpeechRecognition' in window ||'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+
+      recognition.lang = 'es-ES';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        console.log("Escuchado:", transcript);
+        if (transcript.includes("foto")) {
+          tomarFoto();
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Un Error en el reconocimiento de voz:", event.error);
+      };
+
+      recognition.start();
+    } else {
+      alert("El navegador no soporta la Web Speech API");
+    }
+
+    btnDescargar.addEventListener("click", () => {
+      const link = document.createElement('a');
+      link.download = 'foto.png';
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  </script>
+</body>
+</html>
